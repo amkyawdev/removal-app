@@ -39,7 +39,7 @@ export default function Home() {
         </div>
 
         {/* Content */}
-        <div className="w-full max-w-lg">
+        <div className="w-full max-w-sm">
           {error && (
             <div className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 px-4 py-3 rounded-xl mb-4">
               <AlertCircle className="w-4 h-4" />
@@ -57,8 +57,8 @@ export default function Home() {
           )}
 
           {isLoading && (
-            <div className="text-center py-12">
-              <div className="w-10 h-10 mx-auto border-4 border-white/20 rounded-full border-t-cyan animate-spin mb-4" />
+            <div className="text-center py-16">
+              <div className="w-12 h-12 mx-auto border-4 border-white/20 rounded-full border-t-cyan animate-spin mb-4" />
               <p className="text-white/70">Processing...</p>
             </div>
           )}

@@ -55,7 +55,7 @@ export function ImageUploader({ onUpload }: ImageUploaderProps) {
   };
 
   return (
-    <div className="w-full" onClick={handleClick}>
+    <div className="w-full">
       <input
         ref={inputRef}
         type="file"
@@ -66,39 +66,47 @@ export function ImageUploader({ onUpload }: ImageUploaderProps) {
         className="hidden"
       />
 
-      {/* Upload Box */}
-      <div className={`
-        w-full py-16 text-center cursor-pointer rounded-2xl
-        border-2 border-dashed transition-all duration-300
-        ${uploaded 
-          ? 'border-green-500 bg-green-500/10' 
-          : 'border-white/30 hover:border-cyan hover:bg-white/5'
-        }
-      `}>
+      {/* Square Upload Box */}
+      <div 
+        onClick={handleClick}
+        className={`
+          aspect-square w-full max-w-sm mx-auto flex flex-col items-center justify-center cursor-pointer rounded-2xl
+          border-2 border-dashed transition-all duration-300
+          ${uploaded 
+            ? 'border-green-500 bg-green-500/10' 
+            : 'border-white/30 hover:border-cyan hover:bg-white/5'
+          }
+        `}
+      >
         {/* Icon */}
         <div className="mb-4">
           {uploaded ? (
-            <CheckCircle2 className="w-12 h-12 text-green-400 mx-auto" />
+            <CheckCircle2 className="w-14 h-14 text-green-400" />
           ) : (
-            <Upload className="w-12 h-12 text-white/50 mx-auto" />
+            <Upload className="w-14 h-14 text-white/50" />
           )}
         </div>
 
-        {/* Text */}
-        <p className="text-white text-lg font-medium mb-1">
-          {uploaded ? 'Image ready' : 'Click to upload'}
-        </p>
-        <p className="text-white/40 text-sm">
-          {uploaded ? 'Processing will start automatically' : 'or drag and drop'}
-        </p>
-        <p className="text-white/30 text-xs mt-2">
-          JPEG, PNG, WebP, GIF up to 10MB
-        </p>
+        {/* Text Lines with spacing */}
+        <div className="text-center space-y-1">
+          {uploaded ? (
+            <p className="text-white text-lg font-medium">Image ready</p>
+          ) : (
+            <>
+              <p className="text-white text-lg font-medium">Click to upload</p>
+              <p className="text-white/40">or drag and drop</p>
+            </>
+          )}
+        </div>
+        
+        {!uploaded && (
+          <p className="text-white/30 text-sm mt-3">JPEG, PNG, WebP, GIF up to 10MB</p>
+        )}
       </div>
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-2 text-red-400 text-sm mt-3">
+        <div className="flex items-center justify-center gap-2 text-red-400 text-sm mt-4">
           <AlertCircle className="w-4 h-4" />
           <span>{error}</span>
         </div>
