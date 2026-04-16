@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
-import { Upload, Image as ImageIcon, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Upload, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { isValidImageType, isValidImageSize } from '@/lib/utils';
 
 interface ImageUploaderProps {
@@ -9,9 +9,7 @@ interface ImageUploaderProps {
 }
 
 export function ImageUploader({ onUpload }: ImageUploaderProps) {
-  const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
   const [uploaded, setUploaded] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -29,31 +27,15 @@ export function ImageUploader({ onUpload }: ImageUploaderProps) {
         return;
       }
 
-      const reader = new FileReader();
-      reader.onload = () => {
-        setPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-
       onUpload(file);
       setUploaded(true);
     },
     [onUpload]
   );
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
-
-  const handleDragLeave = useCallback(() => {
-    setIsDragging(false);
-  }, []);
-
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
-      setIsDragging(false);
       const file = e.dataTransfer.files[0];
       if (file) handleFile(file);
     },
@@ -68,20 +50,23 @@ export function ImageUploader({ onUpload }: ImageUploaderProps) {
     [handleFile]
   );
 
+  const handleClick = () => {
+    inputRef.current?.click();
+  };
+
   return (
     <div className="w-full">
-      {/* Drop Zone - Smaller */}
+      {/* Drop Zone - No border */}
       <div
-        onClick={() => inputRef.current?.click()}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
+        onClick={handleClick}
+        onDragOver={(e) => e.preventDefault()}
         onDrop={handleDrop}
+        onKeyDown={(e) => e.key === 'Enter' && handleClick()}
+        role="button"
+        tabIndex={0}
         className={`
-          relative cursor-pointer transition-all duration-300
-          border-2 border-dashed rounded-xl p-8
-          bg-white/5 backdrop-blur-sm
-          ${isDragging ? 'border-cyan bg-cyan/10' : 'border-white/20 hover:border-cyan/50'}
-          ${uploaded ? 'border-green-500/50 bg-green-500/5' : ''}
+          cursor-pointer py-12 text-center transition-all duration-300
+          hover:opacity-80
         `}
       >
         <input
@@ -92,41 +77,29 @@ export function ImageUploader({ onUpload }: ImageUploaderProps) {
           className="hidden"
         />
 
-        <div className="flex flex-col items-center gap-4">
-          {/* Icon */}
-          <div className="w-14 h-14 rounded-xl flex items-center justify-center bg-gradient-to-br from-cyan/20 to-electric-violet/20 border border-cyan/30">
-            {uploaded ? (
-              <CheckCircle2 className="w-7 h-7 text-green-400" />
-            ) : (
-              <Upload className="w-7 h-7 text-cyan" />
-            )}
-          </div>
-
-          {/* Text */}
-          <div className="text-center">
-            {uploaded ? (
-              <p className="text-white font-medium">Ready to process</p>
-            ) : (
-              <>
-                <p className="text-white font-medium mb-1">Drop image here</p>
-                <p className="text-white/40 text-xs">or click to browse</p>
-              </>
-            )}
-          </div>
-
-          {/* File types */}
-          {!uploaded && (
-            <div className="flex items-center gap-1.5 text-xs text-white/30">
-              <ImageIcon className="w-3 h-3" />
-              <span>JPEG, PNG, WebP, GIF (max 10MB)</span>
-            </div>
+        {/* Icon */}
+        <div className="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center bg-white/10">
+          {uploaded ? (
+            <CheckCircle2 className="w-6 h-6 text-green-400" />
+          ) : (
+            <Upload className="w-6 h-6 text-white/60" />
           )}
         </div>
+
+        {/* Text */}
+        {uploaded ? (
+          <p className="text-white/80 text-sm">Ready - click to change</p>
+        ) : (
+          <>
+            <p className="text-white font-medium text-sm mb-1">Drop image or click to upload</p>
+            <p className="text-white/40 text-xs">JPEG, PNG, WebP, GIF (max 10MB)</p>
+          </>
+        )}
       </div>
 
       {/* Error */}
       {error && (
-        <div className="mt-3 flex items-center gap-2 text-red-400 text-xs bg-red-500/10 px-3 py-2 rounded-lg">
+        <div className="flex items-center gap-2 text-red-400 text-xs bg-red-500/10 px-3 py-2 rounded-lg">
           <AlertCircle className="w-3 h-3" />
           <span>{error}</span>
         </div>
