@@ -1,52 +1,85 @@
 /**
  * Gradio Client for Background Removal API
  * API: https://huggingface.co/spaces/not-lain/background-removal
+ * Uses queue-based API (two-step process)
  */
 
 const GRADIO_API_URL = process.env.NEXT_PUBLIC_GRADIO_API_URL || 'https://huggingface.co/spaces/not-lain/background-removal';
 
-export interface GradioResponse {
-  data: string[]; // Base64 encoded image
-  is_generating: boolean;
-  average_duration: number;
+interface QueueResponse {
+  event_id?: string;
+  data?: string[];
+  error?: string;
 }
 
 export async function removeBackground(imageBase64: string): Promise<string> {
-  try {
-    // Gradio API expects base64 encoded image with data URI prefix
-    const response = await fetch(`${GRADIO_API_URL}/predict`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        data: [`data:image/png;base64,${imageBase64}`],
-      }),
-    });
+  // Clean up base64 string
+  const cleanBase64 = imageBase64.replace(/^data:image\/[^;]+;base64,/, '');
+  
+  // Step 1: Submit the request to the queue
+  const submitResponse = await fetch(`${GRADIO_API_URL}/gradio_api/queue/join`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      data: [`data:image/png;base64,${cleanBase64}`],
+    }),
+  });
 
-    if (!response.ok) {
-      throw new Error(`API request failed with status ${response.status}`);
-    }
-
-    const result: GradioResponse = await response.json();
-    
-    if (result.data && result.data.length > 0) {
-      // Return the base64 result (without the data URI prefix)
-      return result.data[0].replace('data:image/png;base64,', '');
-    }
-    
-    throw new Error('No image data returned from API');
-  } catch (error) {
-    if (error instanceof Error) {
-      throw new Error(`Failed to remove background: ${error.message}`);
-    }
-    throw new Error('Failed to remove background: Unknown error');
+  if (!submitResponse.ok) {
+    throw new Error(`Failed to submit job: ${submitResponse.status}`);
   }
+
+  const queueData: QueueResponse = await submitResponse.json();
+  const eventId = queueData.event_id;
+
+  if (!eventId) {
+    throw new Error('No event ID returned from queue');
+  }
+
+  // Step 2: Poll for results
+  let attempts = 0;
+  const maxAttempts = 30;
+  
+  while (attempts < maxAttempts) {
+    const statusResponse = await fetch(
+      `${GRADIO_API_URL}/gradio_api/queue/status?event_id=${eventId}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (!statusResponse.ok) {
+      throw new Error(`Failed to get job status: ${statusResponse.status}`);
+    }
+
+    const statusData: QueueResponse & { status?: string } = await statusResponse.json();
+    
+    if (statusData.status === 'complete' && statusData.data) {
+      if (statusData.data.length > 0) {
+        return statusData.data[0].replace('data:image/png;base64,', '');
+      }
+      throw new Error('No image data in result');
+    }
+    
+    if (statusData.status === 'error') {
+      throw new Error(statusData.error || 'Job failed');
+    }
+
+    // Wait before next poll
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    attempts++;
+  }
+
+  throw new Error('Job timed out');
 }
 
 export async function removeBackgroundFromUrl(imageUrl: string): Promise<string> {
   try {
-    // First, fetch the image from URL and convert to base64
     const response = await fetch(imageUrl);
     const blob = await response.blob();
     
