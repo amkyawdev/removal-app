@@ -13,7 +13,6 @@ interface ResultDisplayProps {
 export function ResultDisplay({
   imageUrl,
   originalFileName = 'image.png',
-  onDownload,
   onReset,
 }: ResultDisplayProps) {
   const [copied, setCopied] = useState(false);
@@ -51,12 +50,11 @@ export function ResultDisplay({
   };
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-4">
       {/* Result Image */}
       <div className="relative group">
-        {/* Checkerboard Background */}
         <div
-          className="absolute inset-0 rounded-2xl"
+          className="absolute inset-0 rounded-xl"
           style={{
             backgroundImage: `
               linear-gradient(45deg, #1a1a2e 25%, transparent 25%),
@@ -64,67 +62,54 @@ export function ResultDisplay({
               linear-gradient(45deg, transparent 75%, #1a1a2e 75%),
               linear-gradient(-45deg, transparent 75%, #1a1a2e 75%)
             `,
-            backgroundSize: '20px 20px',
-            backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
+            backgroundSize: '16px 16px',
           }}
         />
-        
-        <div className="relative p-4">
+        <div className="relative p-2">
           <img
             src={`data:image/png;base64,${imageUrl}`}
-            alt="Result with background removed"
-            className="w-full rounded-xl shadow-2xl"
+            alt="Result"
+            className="w-full rounded-lg shadow-lg"
           />
-          
-          {/* Overlay on hover */}
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100">
-            <div className="bg-black/60 backdrop-blur-sm px-4 py-2 rounded-lg text-white text-sm">
-              Transparent Background
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex flex-wrap justify-center gap-4">
+      {/* Buttons */}
+      <div className="flex justify-center gap-3">
         <button
           onClick={handleDownload}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl
+          className="flex items-center gap-2 px-4 py-2 rounded-lg
             bg-gradient-to-r from-cyan to-electric-violet
-            text-white font-semibold transition-all duration-300
-            hover:shadow-lg hover:shadow-cyan/25 hover:scale-105
+            text-white text-sm font-medium
+            hover:shadow-lg hover:shadow-cyan/20 transition-all
             active:scale-95"
         >
-          <Download className="w-5 h-5" />
+          <Download className="w-4 h-4" />
           <span>Download</span>
         </button>
 
         <button
           onClick={handleCopy}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl
+          className="flex items-center gap-2 px-4 py-2 rounded-lg
             bg-white/10 border border-white/20
-            text-white font-semibold transition-all duration-300
-            hover:bg-white/20 hover:border-white/30
+            text-white/80 text-sm font-medium
+            hover:bg-white/20 transition-all
             active:scale-95"
         >
-          {copied ? (
-            <Check className="w-5 h-5 text-green-400" />
-          ) : (
-            <Copy className="w-5 h-5" />
-          )}
-          <span>{copied ? 'Copied!' : 'Copy to Clipboard'}</span>
+          {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+          <span>{copied ? 'Copied' : 'Copy'}</span>
         </button>
 
         <button
           onClick={onReset}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl
+          className="flex items-center gap-2 px-4 py-2 rounded-lg
             bg-white/5 border border-white/10
-            text-white/70 font-semibold transition-all duration-300
-            hover:bg-white/10 hover:text-white hover:border-white/20
+            text-white/50 text-sm font-medium
+            hover:bg-white/10 hover:text-white/70 transition-all
             active:scale-95"
         >
-          <RotateCcw className="w-5 h-5" />
-          <span>Remove Another</span>
+          <RotateCcw className="w-4 h-4" />
+          <span>New</span>
         </button>
       </div>
     </div>
