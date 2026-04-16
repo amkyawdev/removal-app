@@ -3,7 +3,7 @@
  * API: https://huggingface.co/spaces/not-lain/background-removal
  */
 
-const GRADIO_API_URL = 'https://huggingface.co/spaces/not-lain/background-removal';
+const GRADIO_API_URL = process.env.NEXT_PUBLIC_GRADIO_API_URL || 'https://huggingface.co/spaces/not-lain/background-removal';
 
 export interface GradioResponse {
   data: string[]; // Base64 encoded image
