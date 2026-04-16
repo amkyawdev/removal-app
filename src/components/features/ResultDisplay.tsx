@@ -1,6 +1,6 @@
 'use client';
 
-import { Download, RotateCcw, Copy, Check } from 'lucide-react';
+import { Download, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
 
 interface ResultDisplayProps {
@@ -51,10 +51,12 @@ export function ResultDisplay({
 
   return (
     <div className="w-full space-y-4">
-      {/* Result Image */}
-      <div className="relative group">
-        <div
-          className="absolute inset-0 rounded-xl"
+      {/* Image */}
+      <div className="relative rounded-xl overflow-hidden bg-checkerboard">
+        <img
+          src={`data:image/png;base64,${imageUrl}`}
+          alt="Result"
+          className="w-full"
           style={{
             backgroundImage: `
               linear-gradient(45deg, #1a1a2e 25%, transparent 25%),
@@ -62,54 +64,33 @@ export function ResultDisplay({
               linear-gradient(45deg, transparent 75%, #1a1a2e 75%),
               linear-gradient(-45deg, transparent 75%, #1a1a2e 75%)
             `,
-            backgroundSize: '16px 16px',
+            backgroundSize: '20px 20px',
           }}
         />
-        <div className="relative p-2">
-          <img
-            src={`data:image/png;base64,${imageUrl}`}
-            alt="Result"
-            className="w-full rounded-lg shadow-lg"
-          />
-        </div>
       </div>
 
       {/* Buttons */}
-      <div className="flex justify-center gap-3">
+      <div className="flex gap-3">
         <button
           onClick={handleDownload}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg
-            bg-gradient-to-r from-cyan to-electric-violet
-            text-white text-sm font-medium
-            hover:shadow-lg hover:shadow-cyan/20 transition-all
-            active:scale-95"
+          className="flex-1 flex items-center justify-center gap-2 py-3 bg-cyan hover:bg-cyan/80 text-black font-medium rounded-xl transition-all"
         >
-          <Download className="w-4 h-4" />
+          <Download className="w-5 h-5" />
           <span>Download</span>
         </button>
 
         <button
           onClick={handleCopy}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg
-            bg-white/10 border border-white/20
-            text-white/80 text-sm font-medium
-            hover:bg-white/20 transition-all
-            active:scale-95"
+          className="flex-1 flex items-center justify-center gap-2 py-3 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl transition-all"
         >
-          {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
-          <span>{copied ? 'Copied' : 'Copy'}</span>
+          <span>{copied ? 'Copied!' : 'Copy'}</span>
         </button>
 
         <button
           onClick={onReset}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg
-            bg-white/5 border border-white/10
-            text-white/50 text-sm font-medium
-            hover:bg-white/10 hover:text-white/70 transition-all
-            active:scale-95"
+          className="flex items-center justify-center gap-2 py-3 px-4 bg-white/5 hover:bg-white/10 text-white/60 rounded-xl transition-all"
         >
-          <RotateCcw className="w-4 h-4" />
-          <span>New</span>
+          <RotateCcw className="w-5 h-5" />
         </button>
       </div>
     </div>
