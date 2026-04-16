@@ -1,26 +1,19 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
-import { Upload, Image as ImageIcon, AlertCircle } from 'lucide-react';
-import { cn, formatFileSize, isValidImageType, isValidImageSize } from '@/lib/utils';
-import { GlassCard } from './GlassCard';
+import { Upload, Image as ImageIcon, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { cn, isValidImageType, isValidImageSize } from '@/lib/utils';
 
 interface ImageUploaderProps {
   onUpload: (file: File) => void;
   isLoading?: boolean;
-  accept?: string;
-  maxSizeMB?: number;
 }
 
-export function ImageUploader({
-  onUpload,
-  isLoading = false,
-  accept = 'image/jpeg,image/png,image/webp,image/gif',
-  maxSizeMB = 10,
-}: ImageUploaderProps) {
+export function ImageUploader({ onUpload, isLoading = false }: ImageUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [uploaded, setUploaded] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = useCallback(
@@ -32,12 +25,11 @@ export function ImageUploader({
         return;
       }
 
-      if (!isValidImageSize(file, maxSizeMB)) {
-        setError(`File too large. Maximum size is ${maxSizeMB}MB.`);
+      if (!isValidImageSize(file, 10)) {
+        setError('File too large. Maximum size is 10MB.');
         return;
       }
 
-      // Create preview
       const reader = new FileReader();
       reader.onload = () => {
         setPreview(reader.result as string);
@@ -45,8 +37,9 @@ export function ImageUploader({
       reader.readAsDataURL(file);
 
       onUpload(file);
+      setUploaded(true);
     },
-    [onUpload, maxSizeMB]
+    [onUpload]
   );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -87,77 +80,101 @@ export function ImageUploader({
   };
 
   return (
-    <GlassCard className="w-full">
+    <div className="w-full">
+      {/* Drop Zone */}
       <div
         onClick={handleClick}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={cn(
-          'relative cursor-pointer transition-all duration-300',
-          'border-2 border-dashed rounded-xl p-8',
-          'hover:border-electric-violet/50 hover:bg-white/5',
-          isDragging && 'border-electric-violet bg-electric-violet/10 scale-[1.02]',
-          isLoading && 'pointer-events-none opacity-50'
+          'relative cursor-pointer transition-all duration-500',
+          'border-2 border-dashed rounded-2xl p-12',
+          'bg-white/5 backdrop-blur-sm',
+          isDragging 
+            ? 'border-cyan bg-cyan/10 scale-[1.02]' 
+            : 'border-white/20 hover:border-cyan/50 hover:bg-white/10',
+          isLoading && 'pointer-events-none opacity-50',
+          uploaded && 'border-green-500/50 bg-green-500/5'
         )}
       >
         <input
           ref={inputRef}
           type="file"
-          accept={accept}
+          accept="image/jpeg,image/png,image/webp,image/gif"
           onChange={handleChange}
           className="hidden"
           disabled={isLoading}
         />
 
-        <div className="flex flex-col items-center justify-center gap-4 text-center">
-          {preview ? (
-            <div className="relative w-full max-w-md">
+        <div className="flex flex-col items-center justify-center gap-6">
+          {/* Icon */}
+          <div
+            className={cn(
+              'w-20 h-20 rounded-2xl flex items-center justify-center',
+              'bg-gradient-to-br from-cyan/20 to-electric-violet/20',
+              'border border-cyan/30 shadow-lg shadow-cyan/10',
+              uploaded && 'bg-green-500/20 border-green-500/30'
+            )}
+          >
+            {uploaded ? (
+              <CheckCircle2 className="w-10 h-10 text-green-400" />
+            ) : (
+              <Upload className="w-10 h-10 text-cyan" />
+            )}
+          </div>
+
+          {/* Text */}
+          <div className="text-center">
+            {uploaded ? (
+              <p className="text-xl font-semibold text-white">
+                Image Ready for Processing
+              </p>
+            ) : (
+              <>
+                <p className="text-xl font-semibold text-white mb-2">
+                  Drag & drop your image here
+                </p>
+                <p className="text-white/50">
+                  or click to browse files
+                </p>
+              </>
+            )}
+          </div>
+
+          {/* File Info */}
+          {!uploaded && (
+            <div className="flex items-center gap-2 text-sm text-white/40">
+              <ImageIcon className="w-4 h-4" />
+              <span>JPEG, PNG, WebP, GIF (max 10MB)</span>
+            </div>
+          )}
+
+          {/* Preview */}
+          {preview && (
+            <div className="mt-4 relative">
               <img
                 src={preview}
                 alt="Preview"
-                className="w-full h-auto rounded-lg shadow-lg"
+                className="max-h-48 rounded-xl shadow-2xl border border-white/10"
               />
-              <div className="absolute inset-0 bg-black/20 rounded-lg flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                <span className="text-white text-sm font-medium">
-                  Click to change image
-                </span>
-              </div>
+              {isLoading && (
+                <div className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center">
+                  <div className="w-8 h-8 border-2 border-cyan border-t-transparent rounded-full animate-spin" />
+                </div>
+              )}
             </div>
-          ) : (
-            <>
-              <div
-                className={cn(
-                  'w-16 h-16 rounded-full flex items-center justify-center',
-                  'bg-gradient-to-br from-cyan/20 to-electric-violet/20',
-                  'border border-cyan/30'
-                )}
-              >
-                <Upload className="w-8 h-8 text-cyan" />
-              </div>
-              <div>
-                <p className="text-lg font-semibold text-white/90">
-                  Drag & drop your image here
-                </p>
-                <p className="text-sm text-white/60 mt-1">
-                  or click to browse files
-                </p>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-white/40">
-                <ImageIcon className="w-4 h-4" />
-                <span>JPEG, PNG, WebP, GIF (max {maxSizeMB}MB)</span>
-              </div>
-            </>
           )}
         </div>
       </div>
 
+      {/* Error Message */}
       {error && (
-        <div className="mt-4 flex items-center gap-2 text-red-400 text-sm">
-          <AlertCircle className="w-4 h-4" />
+        <div className="mt-4 flex items-center gap-2 text-red-400 text-sm bg-red-500/10 px-4 py-3 rounded-xl">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
           <span>{error}</span>
         </div>
       )}
-    </GlassCard>
+    </div>
   );
 }
