@@ -58,7 +58,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* Result or Loading */}
+          {/* Result */}
           {result && !isLoading && (
             <ResultDisplay
               imageUrl={result}
@@ -68,6 +68,7 @@ export default function Home() {
             />
           )}
 
+          {/* Loading */}
           {isLoading && (
             <div className="text-center py-8">
               <div className="w-10 h-10 mx-auto border-3 border-white/20 rounded-full border-t-cyan animate-spin mb-3" />
@@ -81,15 +82,15 @@ export default function Home() {
           )}
         </div>
 
-        {/* Features - Simple 2-column */}
-        <div className="mt-12 flex gap-4">
-          <div className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full">
+        {/* Features */}
+        <div className="mt-12 flex gap-6">
+          <div className="flex items-center gap-2 px-5 py-2.5 bg-white/5 border border-white/10 rounded-xl">
             <Zap className="w-4 h-4 text-cyan" />
-            <span className="text-white/60 text-sm">Fast</span>
+            <span className="text-white/70 text-sm">Fast</span>
           </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full">
+          <div className="flex items-center gap-2 px-5 py-2.5 bg-white/5 border border-white/10 rounded-xl">
             <Shield className="w-4 h-4 text-electric-violet" />
-            <span className="text-white/60 text-sm">Private</span>
+            <span className="text-white/70 text-sm">Private</span>
           </div>
         </div>
       </div>

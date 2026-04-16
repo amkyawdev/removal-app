@@ -56,7 +56,7 @@ export function ImageUploader({ onUpload }: ImageUploaderProps) {
 
   return (
     <div className="w-full">
-      {/* Drop Zone - No border */}
+      {/* Drop Zone - With Border */}
       <div
         onClick={handleClick}
         onDragOver={(e) => e.preventDefault()}
@@ -65,8 +65,9 @@ export function ImageUploader({ onUpload }: ImageUploaderProps) {
         role="button"
         tabIndex={0}
         className={`
-          cursor-pointer py-12 text-center transition-all duration-300
-          hover:opacity-80
+          cursor-pointer py-10 text-center transition-all duration-300
+          border-2 border-dashed border-white/20 rounded-xl
+          hover:border-cyan/50 hover:bg-white/5
         `}
       >
         <input
@@ -99,7 +100,7 @@ export function ImageUploader({ onUpload }: ImageUploaderProps) {
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-2 text-red-400 text-xs bg-red-500/10 px-3 py-2 rounded-lg">
+        <div className="flex items-center gap-2 text-red-400 text-xs bg-red-500/10 px-3 py-2 rounded-lg mt-3">
           <AlertCircle className="w-3 h-3" />
           <span>{error}</span>
         </div>
