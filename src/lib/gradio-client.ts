@@ -1,80 +1,75 @@
 /**
  * Gradio Client for Background Removal API
- * Uses @gradio/client library for reliable API calls
+ * Uses direct HTTP API calls to Gradio Space
  * Space: https://huggingface.co/spaces/notlain/background-removal
  */
 
-import { Client } from '@gradio/client';
-
-const SPACE_ID = process.env.NEXT_PUBLIC_GRADIO_SPACE_ID || 'notlain/background-removal';
+const SPACE_URL = 'https://huggingface.co/spaces/notlain/background-removal';
 
 /**
- * Connect to Gradio Space and return client instance
+ * Submit job to Gradio queue
  */
-async function getClient(): Promise<Client> {
-  return await Client.connect(SPACE_ID);
+async function submitJob(imageBase64: string): Promise<{ event_id: string }> {
+  const response = await fetch(`${SPACE_URL}/gradio_api/queue/join`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      data: [`data:image/png;base64,${imageBase64}`],
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to submit: ${response.status}`);
+  }
+
+  return response.json();
 }
 
 /**
- * Remove background from an image using Gradio Client
+ * Poll for job status
+ */
+async function getJobStatus(eventId: string): Promise<{ status: string; data?: string[]; error?: string }> {
+  const response = await fetch(`${SPACE_URL}/gradio_api/queue/status?event_id=${eventId}`);
+  
+  if (!response.ok) {
+    throw new Error(`Failed to get status: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Remove background from an image
  * @param imageBase64 - Base64 encoded image (with or without data URI prefix)
  * @returns Base64 encoded result image (without prefix)
  */
 export async function removeBackground(imageBase64: string): Promise<string> {
   try {
-    // Clean up base64 string - remove data URI prefix if present
+    // Clean up base64 string
     const cleanBase64 = imageBase64.replace(/^data:image\/[^;]+;base64,/, '');
     
-    // Convert base64 to Blob
-    const byteCharacters = atob(cleanBase64);
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteNumbers[i] = byteCharacters.charCodeAt(i);
-    }
-    const byteArray = new Uint8Array(byteNumbers);
-    const imageBlob = new Blob([byteArray], { type: 'image/png' });
-
-    // Connect to Gradio Space
-    const client = await getClient();
-
-    // Make prediction
-    const result = await client.predict('/predict', {
-      image: imageBlob,
-    });
-
-    // Result contains the processed image
-    // The result.data[0] can be a URL or base64 string
-    const dataArr = result.data as unknown as (string | undefined)[];
-    if (dataArr && dataArr[0]) {
-      const imageData = dataArr[0];
+    // Submit job
+    const { event_id } = await submitJob(cleanBase64);
+    
+    // Poll for result (max 30 attempts)
+    for (let i = 0; i < 30; i++) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // If it's already a base64 string (without prefix), return it
-      if (typeof imageData === 'string' && !imageData.startsWith('data:')) {
-        return imageData;
+      const status = await getJobStatus(event_id);
+      
+      if (status.status === 'complete' && status.data?.[0]) {
+        const result = status.data[0];
+        return result.replace(/^data:image\/[^;]+;base64,/, '');
       }
       
-      // If it has data URI prefix, extract the base64 part
-      if (typeof imageData === 'string' && imageData.startsWith('data:')) {
-        return imageData.replace(/^data:image\/[^;]+;base64,/, '');
-      }
-      
-      // If it's a URL, we need to fetch and convert
-      if (typeof imageData === 'string' && imageData.startsWith('http')) {
-        const response = await fetch(imageData);
-        const blob = await response.blob();
-        return new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            const base64 = (reader.result as string).split(',')[1];
-            resolve(base64);
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
+      if (status.status === 'error') {
+        throw new Error(status.error || 'Processing failed');
       }
     }
-
-    throw new Error('No image data returned from API');
+    
+    throw new Error('Timeout - processing took too long');
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(`Failed to remove background: ${error.message}`);
@@ -84,43 +79,29 @@ export async function removeBackground(imageBase64: string): Promise<string> {
 }
 
 /**
- * Remove background from an image URL
- * @param imageUrl - URL of the image to process
- * @returns Base64 encoded result image
+ * Remove background from image URL
+ * @param imageUrl - URL of the image
+ * @returns Base64 encoded result
  */
 export async function removeBackgroundFromUrl(imageUrl: string): Promise<string> {
   try {
-    // Fetch the image
     const response = await fetch(imageUrl);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch image: ${response.status}`);
-    }
-    
     const blob = await response.blob();
     
-    // Connect to Gradio Space
-    const client = await getClient();
-
-    // Make prediction with the blob
-    const result = await client.predict('/predict', {
-      image: blob,
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64 = (reader.result as string).split(',')[1];
+        try {
+          const result = await removeBackground(base64);
+          resolve(result);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      reader.onerror = () => reject(new Error('Failed to read image'));
+      reader.readAsDataURL(blob);
     });
-
-    // Process result
-    const dataArr2 = result.data as unknown as (string | undefined)[];
-    if (dataArr2 && dataArr2[0]) {
-      const imageData = dataArr2[0];
-      
-      if (typeof imageData === 'string' && !imageData.startsWith('data:')) {
-        return imageData;
-      }
-      
-      if (typeof imageData === 'string' && imageData.startsWith('data:')) {
-        return imageData.replace(/^data:image\/[^;]+;base64,/, '');
-      }
-    }
-
-    throw new Error('No image data returned from API');
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(`Failed to process image: ${error.message}`);
