@@ -44,8 +44,9 @@ export async function removeBackground(imageBase64: string): Promise<string> {
 
     // Result contains the processed image
     // The result.data[0] can be a URL or base64 string
-    if (result.data && result.data[0]) {
-      const imageData = result.data[0];
+    const dataArr = result.data as unknown as (string | undefined)[];
+    if (dataArr && dataArr[0]) {
+      const imageData = dataArr[0];
       
       // If it's already a base64 string (without prefix), return it
       if (typeof imageData === 'string' && !imageData.startsWith('data:')) {
@@ -106,8 +107,9 @@ export async function removeBackgroundFromUrl(imageUrl: string): Promise<string>
     });
 
     // Process result
-    if (result.data && result.data[0]) {
-      const imageData = result.data[0];
+    const dataArr2 = result.data as unknown as (string | undefined)[];
+    if (dataArr2 && dataArr2[0]) {
+      const imageData = dataArr2[0];
       
       if (typeof imageData === 'string' && !imageData.startsWith('data:')) {
         return imageData;
