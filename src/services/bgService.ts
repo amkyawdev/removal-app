@@ -3,29 +3,37 @@ import { BackgroundRemovalResult } from '@/types';
 
 /**
  * Background Removal Service
- * Handles business logic for background removal
+ * AI logic နှင့် Business logic များကို ပေါင်းစည်းပေးသော Service ဖြစ်သည်။
  */
 export class BackgroundRemovalService {
+  
   /**
-   * Remove background from a base64 encoded image
+   * Base64 format ဖြင့် နောက်ခံဖယ်ရှားခြင်း
    */
   static async removeFromBase64(imageBase64: string): Promise<BackgroundRemovalResult> {
     try {
-      const result = await removeBackground(imageBase64);
+      // metadata ပါဝင်ပါက ဖယ်ရှားပြီးမှ ပို့ဆောင်ခြင်း
+      const cleanBase64 = imageBase64.includes(',') 
+        ? imageBase64.split(',')[1] 
+        : imageBase64;
+
+      const result = await removeBackground(cleanBase64);
+      
       return {
         success: true,
         imageUrl: result,
       };
     } catch (error) {
+      console.error('Base64 Processing Error:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        error: error instanceof Error ? error.message : 'နောက်ခံဖယ်ရှားရာတွင် အမှားအယွင်းရှိပါသည်။',
       };
     }
   }
 
   /**
-   * Remove background from an image URL
+   * Image URL မှတစ်ဆင့် နောက်ခံဖယ်ရှားခြင်း
    */
   static async removeFromUrl(imageUrl: string): Promise<BackgroundRemovalResult> {
     try {
@@ -37,36 +45,43 @@ export class BackgroundRemovalService {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        error: error instanceof Error ? error.message : 'URL မှ ပုံကို ရယူ၍မရပါ။',
       };
     }
   }
 
   /**
-   * Process uploaded file and remove background
+   * Upload လုပ်ထားသော File ကို လက်ခံ၍ Background ဖယ်ရှားခြင်း
    */
   static async processFile(file: File): Promise<BackgroundRemovalResult> {
-    return new Promise((resolve) => {
+    try {
+      // ၁။ File Type စစ်ဆေးခြင်း
+      if (!file.type.startsWith('image/')) {
+        return { success: false, error: 'ပုံရိပ်ဖိုင် (Image) သာ တင်ပေးပါရန်။' };
+      }
+
+      // ၂။ File ကို Base64 သို့ ပြောင်းလဲခြင်း
+      const base64 = await this.fileToBase64(file);
+      
+      // ၃။ ပုံကို Process လုပ်ခြင်း
+      return await this.removeFromBase64(base64);
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'ဖိုင်ဖတ်ရာတွင် အမှားအယွင်းရှိပါသည်။',
+      };
+    }
+  }
+
+  /**
+   * Helper: File Object ကို Base64 String သို့ ပြောင်းပေးသည့် Function
+   */
+  private static fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = async () => {
-        try {
-          const base64 = (reader.result as string).split(',')[1];
-          const result = await this.removeFromBase64(base64);
-          resolve(result);
-        } catch (error) {
-          resolve({
-            success: false,
-            error: error instanceof Error ? error.message : 'Failed to process file',
-          });
-        }
-      };
-      reader.onerror = () => {
-        resolve({
-          success: false,
-          error: 'Failed to read file',
-        });
-      };
       reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(new Error('ဖိုင်ဖတ်၍ မရပါ'));
     });
   }
 }
